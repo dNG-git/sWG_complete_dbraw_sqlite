@@ -15,7 +15,6 @@ for a particular purpose.
 ----------------------------------------------------------------------------
 http://www.direct-netware.de/redirect.php?licenses;w3c
 ----------------------------------------------------------------------------
-$Id: swg_dbraw_pdo_sqlite.php,v 1.1 2008/12/25 18:27:18 s4u Exp $
 #echo(sWGdbrawSqliteVersion)#
 sWG/#echo(__FILEPATH__)#
 ----------------------------------------------------------------------------
