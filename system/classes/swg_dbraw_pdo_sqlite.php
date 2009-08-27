@@ -301,7 +301,9 @@ $this->pdo = array (
 			}
 			case "select":
 			{
-				if (empty ($f_data['attributes'])) { $f_continue_check = false; }
+				if ($f_data['answer'] == "nr") { $f_data['attributes'] = array ("count-rows(*)"); }
+				elseif (empty ($f_data['attributes'])) { $f_continue_check = false; }
+
 				if (empty ($f_data['table'])) { $f_continue_check = false; }
 
 				$this->query_cache = "SELECT ";
@@ -940,7 +942,7 @@ Don't forget to check the buffer $f_word_buffer
 						if (!empty ($f_row_array)) { $f_return[] = implode ("\n",$f_row_array); }
 					}
 				}
-				elseif ($f_answer == "nr") { $f_return = $f_result_object->rowCount (); }
+				elseif ($f_answer == "nr") { $f_return = $f_result_object->fetchColumn (); }
 				elseif ($f_answer == "sa")
 				{
 					$f_return = array ();
