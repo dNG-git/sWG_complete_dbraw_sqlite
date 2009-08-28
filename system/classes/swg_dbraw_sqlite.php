@@ -49,8 +49,7 @@ all development packets)
 Testing for required classes
 ------------------------------------------------------------------------- */
 
-$g_continue_check = true;
-if (defined ("CLASS_direct_dbraw_sqlite")) { $g_continue_check = false; }
+$g_continue_check = ((defined ("CLASS_direct_dbraw_sqlite")) ? false : true);
 if (!defined ("CLASS_direct_db")) { $g_continue_check = false; }
 
 if ($g_continue_check)
@@ -201,13 +200,8 @@ Set up some variables
 		global $direct_settings;
 		if (USE_debug_reporting) { direct_debug (3,"sWG/#echo(__FILEPATH__)# -db_class->disconnect ()- (#echo(__LINE__)#)"); }
 
-		$f_return = false;
-
-		if (is_resource ($this->resource))
-		{
-			if ($direct_settings['db_peristent']) { $f_return = true; }
-			else { $f_return = sqlite_close ($this->resource); }
-		}
+		if (is_resource ($this->resource)) { $f_return = ($direct_settings['db_peristent'] ? true : sqlite_close ($this->resource)); }
+		else { $f_return = false; }
 
 		return /*#ifdef(DEBUG):direct_debug (7,"sWG/#echo(__FILEPATH__)# -db_class->disconnect ()- (#echo(__LINE__)#)",:#*/$f_return/*#ifdef(DEBUG):,true):#*/;
 	}
@@ -286,69 +280,54 @@ Set up some variables
 
 			if ($f_continue_check)
 			{
-				if ($f_data['type'] == "select")
-				{
-					if (!empty ($f_data['attributes'])) { $this->query_cache .= ($this->query_build_attributes ($f_data['attributes']))." FROM "; }
-				}
-
+				if (($f_data['type'] == "select")&&(!empty ($f_data['attributes']))) { $this->query_cache .= ($this->query_build_attributes ($f_data['attributes']))." FROM "; }
 				$this->query_cache .= $f_data['table'];
 
-				if ($f_data['type'] == "select")
+				if (($f_data['type'] == "select")&&(!empty ($f_data['joins'])))
 				{
-					if (!empty ($f_data['joins']))
+					foreach ($f_data['joins'] as $f_join_array)
 					{
-						foreach ($f_data['joins'] as $f_join_array)
+						switch ($f_join_array['type'])
 						{
-							switch ($f_join_array['type'])
-							{
-							case "cross-join":
-							{
-								$this->query_cache .= " CROSS JOIN ".$f_join_array['table'];
-								break 1;
-							}
-							case "inner-join":
-							{
-								$this->query_cache .= " INNER JOIN {$f_join_array['table']} ON ";
-								break 1;
-							}
-							case "left-outer-join":
-							{
-								$this->query_cache .= " LEFT OUTER JOIN {$f_join_array['table']} ON ";
-								break 1;
-							}
-							case "natural-join":
-							{
-								$this->query_cache .= " NATURAL JOIN ".$f_join_array['table'];
-								break 1;
-							}
-							case "right-outer-join":
-							{
-								$this->query_cache .= " RIGHT OUTER JOIN {$f_join_array['table']} ON ";
-								break 1;
-							}
-							}
+						case "cross-join":
+						{
+							$this->query_cache .= " CROSS JOIN ".$f_join_array['table'];
+							break 1;
+						}
+						case "inner-join":
+						{
+							$this->query_cache .= " INNER JOIN {$f_join_array['table']} ON ";
+							break 1;
+						}
+						case "left-outer-join":
+						{
+							$this->query_cache .= " LEFT OUTER JOIN {$f_join_array['table']} ON ";
+							break 1;
+						}
+						case "natural-join":
+						{
+							$this->query_cache .= " NATURAL JOIN ".$f_join_array['table'];
+							break 1;
+						}
+						case "right-outer-join":
+						{
+							$this->query_cache .= " RIGHT OUTER JOIN {$f_join_array['table']} ON ";
+							break 1;
+						}
+						}
 
-							if (!empty ($f_join_array['requirements']))
-							{
-								$f_xml_node_array = $direct_classes['xml_bridge']->xml2array ($f_join_array['requirements'],true,false);
-								if (isset ($f_xml_node_array['sqlconditions'])) { $this->query_cache .= $this->query_build_row_conditions_walker ($f_xml_node_array['sqlconditions']); }
-							}
+						if (!empty ($f_join_array['requirements']))
+						{
+							$f_xml_node_array = $direct_classes['xml_bridge']->xml2array ($f_join_array['requirements'],true,false);
+							if (isset ($f_xml_node_array['sqlconditions'])) { $this->query_cache .= $this->query_build_row_conditions_walker ($f_xml_node_array['sqlconditions']); }
 						}
 					}
 				}
 
-				if (($f_data['type'] == "insert")||($f_data['type'] == "replace")||($f_data['type'] == "update"))
+				if ((($f_data['type'] == "insert")||($f_data['type'] == "replace")||($f_data['type'] == "update"))&&($f_data['set_attributes']))
 				{
-					if ($f_data['set_attributes'])
-					{
-						$f_xml_node_array = $direct_classes['xml_bridge']->xml2array ($f_data['set_attributes'],true,false);
-
-						if (isset ($f_xml_node_array['sqlvalues']))
-						{
-							if ($f_data['type'] == "update") { $this->query_cache .= " SET ".($this->query_build_set_attributes ($f_xml_node_array['sqlvalues'])); }
-							else { $this->query_cache .= " ".($this->query_build_values_keys ($f_xml_node_array['sqlvalues'])); }
-						}
-					}
+					$f_xml_node_array = $direct_classes['xml_bridge']->xml2array ($f_data['set_attributes'],true,false);
+					if (isset ($f_xml_node_array['sqlvalues'])) { $this->query_cache .= (($f_data['type'] == "update") ? " SET ".($this->query_build_set_attributes ($f_xml_node_array['sqlvalues'])) : " ".($this->query_build_values_keys ($f_xml_node_array['sqlvalues']))); }
 				}
 
 				if (($f_data['type'] == "delete")||($f_data['type'] == "select")||($f_data['type'] == "update"))
@@ -371,25 +350,17 @@ Set up some variables
 						if ($f_data['search_conditions'])
 						{
 							$f_xml_node_array = $direct_classes['xml_bridge']->xml2array ($f_data['search_conditions'],true,false);
-
-							if (isset ($f_xml_node_array['sqlconditions']))
-							{
-								if ($f_where_defined) { $this->query_cache .= " AND (".($this->query_build_search_conditions ($f_xml_node_array['sqlconditions'])).")"; }
-								else { $this->query_cache .= " WHERE ".($this->query_build_search_conditions ($f_xml_node_array['sqlconditions'])); }
-							}
+							if (isset ($f_xml_node_array['sqlconditions'])) { $this->query_cache .= ($f_where_defined ? " AND (".($this->query_build_search_conditions ($f_xml_node_array['sqlconditions'])).")" : " WHERE ".($this->query_build_search_conditions ($f_xml_node_array['sqlconditions']))); }
 						}
 
 						if (!empty ($f_data['grouping'])) { $this->query_cache .= " GROUP BY ".(implode (",",$f_data['grouping'])); }
 					}
 				}
 
-				if ($f_data['type'] == "select")
+				if (($f_data['type'] == "select")&&($f_data['ordering']))
 				{
-					if ($f_data['ordering'])
-					{
-						$f_xml_node_array = $direct_classes['xml_bridge']->xml2array ($f_data['ordering'],true,false);
-						if (isset ($f_xml_node_array['sqlordering'])) { $this->query_cache .= " ORDER BY ".($this->query_build_ordering ($f_xml_node_array['sqlordering'])); }
-					}
+					$f_xml_node_array = $direct_classes['xml_bridge']->xml2array ($f_data['ordering'],true,false);
+					if (isset ($f_xml_node_array['sqlordering'])) { $this->query_cache .= " ORDER BY ".($this->query_build_ordering ($f_xml_node_array['sqlordering'])); }
 				}
 
 				if (($f_data['type'] == "insert")||($f_data['type'] == "replace"))
@@ -423,8 +394,7 @@ Set up some variables
 					if ($f_data['offset']) { $this->query_cache .= " OFFSET ".$f_data['offset']; }
 				}
 
-				if ($f_data['answer'] == "sql") { $f_return = $this->query_cache; }
-				else { $f_return = $this->query_exec ($f_data['answer'],$this->query_cache); }
+				$f_return = (($f_data['answer'] == "sql") ? $this->query_cache : $this->query_exec ($f_data['answer'],$this->query_cache));
 			}
 			else { trigger_error ("sWG/#echo(__FILEPATH__)# -db_class->query_build ()- (#echo(__LINE__)#) reporting: Required definition elements are missing",E_USER_WARNING); }
 		}
@@ -500,9 +470,7 @@ Set up some variables
 			foreach ($f_ordering_list as $f_ordering_array)
 			{
 				if ($f_return) { $f_return .= ", "; }
-
-				if ($f_ordering_array['attributes']['type'] == "desc") { $f_return .= $f_ordering_array['attributes']['attribute']." DESC"; }
-				else { $f_return .= $f_ordering_array['attributes']['attribute']." ASC"; }
+				$f_return .= (($f_ordering_array['attributes']['type'] == "desc") ? $f_ordering_array['attributes']['attribute']." DESC" : $f_ordering_array['attributes']['attribute']." ASC");
 			}
 		}
 
@@ -535,25 +503,13 @@ Set up some variables
 				{
 					if (isset ($f_requirement_array['xml.item']))
 					{
-						if ($f_return)
-						{
-							if ((isset ($f_requirement_array['xml.item']['attributes']['condition']))&&($f_requirement_array['xml.item']['attributes']['condition'] == "or")) { $f_return .= " OR "; }
-							else { $f_return .= " AND "; }
-						}
-
-						if (count ($f_requirement_array) > 2) { $f_return .= "(".($this->query_build_row_conditions_walker ($f_requirement_array)).")"; }
-						else { $f_return .= $this->query_build_row_conditions_walker ($f_requirement_array); }
+						if ($f_return) { $f_return .= (((isset ($f_requirement_array['xml.item']['attributes']['condition']))&&($f_requirement_array['xml.item']['attributes']['condition'] == "or")) ? " OR " : " AND "); }
+						$f_return .= ((count ($f_requirement_array) > 2) ? "(".($this->query_build_row_conditions_walker ($f_requirement_array)).")" : $this->query_build_row_conditions_walker ($f_requirement_array));
 					}
 					elseif ($f_requirement_array['value'] != "*")
 					{
 						if (!isset ($f_requirement_array['attributes']['type'])) { $f_requirement_array['attributes']['type'] = "string"; }
-
-						if ($f_return)
-						{
-							if ((isset ($f_requirement_array['attributes']['condition']))&&($f_requirement_array['attributes']['condition'] == "or")) { $f_return .= " OR "; }
-							else { $f_return .= " AND "; }
-						}
-
+						if ($f_return) { $f_return .= (((isset ($f_requirement_array['attributes']['condition']))&&($f_requirement_array['attributes']['condition'] == "or")) ? " OR " : " AND "); }
 						if (!isset ($f_requirement_array['attributes']['operator'])) { $f_requirement_array['attributes']['operator'] = ""; }
 
 						switch ($f_requirement_array['attributes']['operator'])
@@ -569,9 +525,12 @@ Set up some variables
 						$f_return .= $f_requirement_array['attributes']['attribute'];
 
 						if (isset ($f_requirement_array['attributes']['null'])) { $f_return .= " {$f_requirement_array['attributes']['operator']} NULL"; }
-						elseif (($f_requirement_array['attributes']['type'] == "string")&&($f_requirement_array['value'][0] != "'")) { $f_return .= " {$f_requirement_array['attributes']['operator']} '{$f_requirement_array['value']}'"; }
-						elseif (strlen ($f_requirement_array['value'])) { $f_return .= " {$f_requirement_array['attributes']['operator']} ".$f_requirement_array['value']; }
-						else { $f_return .= "NULL"; }
+						elseif (strlen ($f_requirement_array['value']))
+						{
+							$f_return .= " {$f_requirement_array['attributes']['operator']} ";
+							$f_return .= ((($f_requirement_array['attributes']['type'] == "string")&&($f_requirement_array['value'][0] != "'")) ? "'{$f_requirement_array['value']}'" : $f_requirement_array['value']);
+						}
+						else { $f_return .= " {$f_requirement_array['attributes']['operator']} NULL"; }
 					}
 				}
 			}
@@ -673,25 +632,22 @@ Result is: [0] => %Test% [1] => %Test1 Test2 Test3% [2] => %Test4%
 						$f_single_check = false;
 						$f_word_buffer .= $f_word;
 					}
+					elseif ($f_and_check)
+					{
+						$f_and_check = false;
+						$f_word_buffer = str_replace ("%%","%","%".(trim ($f_word_buffer))."%");
+						$f_search_term_array[] = $f_word_buffer;
+						$f_word_buffer = $f_word;
+					}
 					else
 					{
-						if ($f_and_check)
+						if ($f_word_buffer)
 						{
-							$f_and_check = false;
 							$f_word_buffer = str_replace ("%%","%","%".(trim ($f_word_buffer))."%");
 							$f_search_term_array[] = $f_word_buffer;
-							$f_word_buffer = $f_word;
 						}
-						else
-						{
-							if ($f_word_buffer)
-							{
-								$f_word_buffer = str_replace ("%%","%","%".(trim ($f_word_buffer))."%");
-								$f_search_term_array[] = $f_word_buffer;
-							}
 
-							$f_word_buffer = $f_word;
-						}
+						$f_word_buffer = $f_word;
 					}
 				}
 
@@ -746,12 +702,8 @@ Don't forget to check the buffer $f_word_buffer
 				$f_return .= (preg_replace ("#^(.*?)\.(\w+)$#","\\2",$f_attribute_array['attributes']['attribute']))."=";
 
 				if (isset ($f_attribute_array['attributes']['null'])) { $f_return .= "NULL"; }
-				elseif (($f_attribute_array['attributes']['type'] == "string")&&($f_attribute_array['value'][0] != "'")) { $f_return .= "'{$f_attribute_array['value']}'"; }
-				else
-				{
-					if (strlen ($f_attribute_array['value'])) { $f_return .= $f_attribute_array['value']; }
-					else { $f_return .= "NULL"; }
-				}
+				elseif (strlen ($f_attribute_array['value'])) { $f_return .= ((($f_attribute_array['attributes']['type'] == "string")&&($f_attribute_array['value'][0] != "'")) ? "'{$f_attribute_array['value']}'" : $f_attribute_array['value']); }
+				else { $f_return .= "NULL"; }
 			}
 		}
 
@@ -789,17 +741,11 @@ Don't forget to check the buffer $f_word_buffer
 				else
 				{
 					$f_bracket_check = true;
-
-					if ($f_return) { $f_return .= ","; }
-					else { $f_return .= "("; }
+					$f_return .= ($f_return ? "," : "(");
 
 					if (isset ($f_value_array['attributes']['null'])) { $f_return .= "NULL"; }
-					elseif (($f_value_array['attributes']['type'] == "string")&&($f_value_array['value'][0] != "'")) { $f_return .= "'{$f_value_array['value']}'"; }
-					else
-					{
-						if (strlen ($f_value_array['value'])) { $f_return .= $f_value_array['value']; }
-						else { $f_return .= "NULL"; }
-					}
+					elseif (strlen ($f_value_array['value'])) { $f_return .= ((($f_value_array['attributes']['type'] == "string")&&($f_value_array['value'][0] != "'")) ? "'{$f_value_array['value']}'" : $f_value_array['value']); }
+					else { $f_return .= "NULL"; }
 				}
 			}
 
@@ -835,12 +781,8 @@ Don't forget to check the buffer $f_word_buffer
 				$f_keys[] = preg_replace ("#^(.*?)\.(\w+)$#","\\2",$f_attribute_array['attributes']['attribute']);
 
 				if (isset ($f_attribute_array['attributes']['null'])) { $f_values[] = "NULL"; }
-				elseif (($f_attribute_array['attributes']['type'] == "string")&&($f_attribute_array['value'][0] != "'")) { $f_values[] = "'{$f_attribute_array['value']}'"; }
-				else
-				{
-					if (strlen ($f_attribute_array['value'])) { $f_values[] = $f_attribute_array['value']; }
-					else { $f_values[] = "NULL"; }
-				}
+				elseif (strlen ($f_attribute_array['value'])) { $f_values[] = ((($f_attribute_array['attributes']['type'] == "string")&&($f_attribute_array['value'][0] != "'")) ? "'{$f_attribute_array['value']}'" : $f_attribute_array['value']); }
+				else { $f_values[] = "NULL"; }
 			}
 
 			$f_return = "(".(implode (",",$f_keys)).") VALUES (".(implode (",",$f_values)).")";
@@ -886,13 +828,7 @@ Don't forget to check the buffer $f_word_buffer
 				while ($f_row_array = sqlite_fetch_array ($f_result_pointer,SQLITE_ASSOC))
 				{
 					$f_filtered_row_array = array ();
-
-					foreach ($f_row_array as $f_column => $f_column_data)
-					{
-						if (is_numeric ($f_column_data)) { $f_filtered_row_array[$f_column] = (0 + $f_column_data); }
-						else { $f_filtered_row_array[$f_column] = $f_column_data; }
-					}
-
+					foreach ($f_row_array as $f_column => $f_column_data) { $f_filtered_row_array[$f_column] = ((is_numeric ($f_column_data)) ? (float)$f_column_data : $f_column_data); }
 					$f_return[] = $f_filtered_row_array;
 				}
 			}
@@ -913,19 +849,13 @@ Don't forget to check the buffer $f_word_buffer
 
 				if ($f_row_array)
 				{
-					foreach ($f_row_array as $f_column => $f_column_data)
-					{
-						if (is_numeric ($f_column_data)) { $f_return[$f_column] = (0 + $f_column_data); }
-						else { $f_return[$f_column] = $f_column_data; }
-					}
+					foreach ($f_row_array as $f_column => $f_column_data) { $f_return[$f_column] = ((is_numeric ($f_column_data)) ? (float)$f_column_data : $f_column_data); }
 				}
 			}
 			elseif ($f_answer == "ss")
 			{
 				$f_row_array = sqlite_fetch_array ($f_result_pointer,SQLITE_NUM);
-
-				if (empty ($f_row_array)) { $f_return = ""; }
-				else { $f_return = implode ("\n",$f_row_array); }
+				$f_return = ((empty ($f_row_array)) ? "" : implode ("\n",$f_row_array));
 			}
 			else { $f_return = false; }
 		}
@@ -999,9 +929,7 @@ Don't forget to check the buffer $f_word_buffer
 
 			if (is_resource ($this->resource))
 			{
-				if ($this->transactions > 0) { $f_return = true; }
-				else { $f_return = $this->query_exec ("co","BEGIN"); }
-
+				$f_return = (($this->transactions > 0) ? true : $this->query_exec ("co","BEGIN"));
 				if ($f_return) { $this->transactions++; }
 			}
 			else { trigger_error ("sWG/#echo(__FILEPATH__)# -db_class->transaction_begin ()- (#echo(__LINE__)#) reporting: Database resource invalid",E_USER_WARNING); }
@@ -1032,9 +960,7 @@ Don't forget to check the buffer $f_word_buffer
 
 			if (($this->transactions > 0)&&(is_resource ($this->resource)))
 			{
-				if ($this->transactions > 1) { $f_return = true; }
-				else { $f_return = $this->query_exec ("co","COMMIT"); }
-
+				$f_return = (($this->transactions > 1) ? true : $f_return = $this->query_exec ("co","COMMIT"));
 				if ($f_return) { $this->transactions--; }
 			}
 			else { trigger_error ("sWG/#echo(__FILEPATH__)# -db_class->transaction_commit ()- (#echo(__LINE__)#) reporting: Database resource invalid",E_USER_WARNING); }
@@ -1065,9 +991,7 @@ Don't forget to check the buffer $f_word_buffer
 
 			if (($this->transactions > 0)&&(is_resource ($this->resource)))
 			{
-				if ($this->transactions > 1) { $f_return = true; }
-				else { $f_return = $this->query_exec ("co","ROLLBACK"); }
-
+				$f_return = (($this->transactions > 1) ? true : $this->query_exec ("co","ROLLBACK"));
 				if ($f_return) { $this->transactions--; }
 			}
 			else { trigger_error ("sWG/#echo(__FILEPATH__)# -db_class->transaction_rollback ()- (#echo(__LINE__)#) reporting: Database resource invalid",E_USER_WARNING); }
