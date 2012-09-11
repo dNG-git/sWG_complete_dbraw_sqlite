@@ -9,11 +9,11 @@ net-based application engine
 (C) direct Netware Group - All rights reserved
 http://www.direct-netware.de/redirect.php?swg
 
-This work is distributed under the W3C (R) Software License, but without any
-warranty; without even the implied warranty of merchantability or fitness
-for a particular purpose.
+This Source Code Form is subject to the terms of the Mozilla Public License,
+v. 2.0. If a copy of the MPL was not distributed with this file, You can
+obtain one at http://mozilla.org/MPL/2.0/.
 ----------------------------------------------------------------------------
-http://www.direct-netware.de/redirect.php?licenses;w3c
+http://www.direct-netware.de/redirect.php?licenses;mpl2
 ----------------------------------------------------------------------------
 #echo(sWGdbrawSqliteVersion)#
 sWG/#echo(__FILEPATH__)#
@@ -35,9 +35,16 @@ NOTE_END //n*/
 * @package    sWG
 * @subpackage db
 * @since      v0.1.00
-* @license    http://www.direct-netware.de/redirect.php?licenses;w3c
-*             W3C (R) Software License
+* @license    http://www.direct-netware.de/redirect.php?licenses;mpl2
+*             Mozilla Public License, v. 2.0
 */
+/*#ifdef(PHP5n) */
+
+namespace dNG\sWG\dbraw;
+/* #*/
+/*#use(direct_use) */
+use dNG\sWG\directVirtualClass;
+/* #\n*/
 
 /* -------------------------------------------------------------------------
 All comments will be removed in the "production" packages (they will be in
@@ -50,13 +57,11 @@ all development packets)
 Testing for required classes
 ------------------------------------------------------------------------- */
 
-$g_continue_check = class_exists ("PDO");
-if (defined ("CLASS_direct_dbraw_pdo_sqlite")) { $g_continue_check = false; }
-if (!defined ("CLASS_direct_db")) { $g_continue_check = false; }
+$g_continue_check = class_exists (/*#ifdef(PHP5n) */'\PDO'/* #*//*#ifndef(PHP5n):"PDO":#*//*#ifndef(PHP4) */,false/* #*/);
+if (defined ("CLASS_directPdoSqlite")) { $g_continue_check = false; }
 
 if ($g_continue_check)
 {
-//c// direct_dbraw_pdo_sqlite
 /**
 * This class has been designed to be used with a SQLite database.
 *
@@ -64,12 +69,11 @@ if ($g_continue_check)
 * @copyright  (C) direct Netware Group - All rights reserved
 * @package    sWG
 * @subpackage db
-* @uses       CLASS_direct_virtual_class
 * @since      v0.1.00
-* @license    http://www.direct-netware.de/redirect.php?licenses;w3c
-*             W3C (R) Software License
+* @license    http://www.direct-netware.de/redirect.php?licenses;mpl2
+*             Mozilla Public License, v. 2.0
 */
-class direct_dbraw_pdo_sqlite extends direct_virtual_class
+class directPdoSqlite extends directVirtualClass
 {
 /**
 	* @var string $query_cache This variable saves a built SQL query
@@ -92,19 +96,15 @@ class direct_dbraw_pdo_sqlite extends direct_virtual_class
 Extend the class
 ------------------------------------------------------------------------- */
 
-	//f// direct_dbraw_pdo_sqlite->__construct ()
 /**
-	* Constructor (PHP5) __construct (direct_dbraw_pdo_sqlite)
+	* Constructor (PHP5) __construct (directPdoSqlite)
 	*
-	* @uses  direct_basic_functions::include_file()
-	* @uses  direct_debug()
-	* @uses  USE_debug_reporting
 	* @since v0.1.00
 */
 	public function __construct ()
 	{
-		global $direct_classes,$direct_settings;
-		if (USE_debug_reporting) { direct_debug (5,"sWG/#echo(__FILEPATH__)# -db_class->__construct (direct_dbraw_pdo_sqlite)- (#echo(__LINE__)#)"); }
+		global $direct_globals,$direct_settings;
+		if (USE_debug_reporting) { direct_debug (5,"sWG/#echo(__FILEPATH__)# -db->__construct (directPdoSqlite)- (#echo(__LINE__)#)"); }
 
 		if (isset ($direct_settings['db_synchronisation']))
 		{
@@ -112,7 +112,7 @@ Extend the class
 
 			if (($direct_settings['db_synchronisation'])&&($direct_settings['db_synchronisation_mantrig']))
 			{
-				if (!$direct_classes['basic_functions']->include_file ($direct_settings['path_system']."/functions/swg_dbsync.php",1)) { trigger_error ("sWG/#echo(__FILEPATH__)# _dbraw_pdo_sqlite_ (#echo(__LINE__)#) reporting: Manual synchronisation trigger unavailable",E_USER_WARNING); }
+				if (!$direct_globals['basic_functions']->includeFile ($direct_settings['path_system']."/functions/swg_dbsync.php",1)) { trigger_error ("sWG/#echo(__FILEPATH__)# -db->__construct (directPdoSqlite)- (#echo(__LINE__)#) reporting: Manual synchronisation trigger unavailable",E_USER_WARNING); }
 			}
 		}
 
@@ -128,20 +128,20 @@ Informing the system about available functions
 
 		$this->functions['connect'] = true;
 		$this->functions['disconnect'] = true;
-		$this->functions['query_build'] = true;
-		$this->functions['query_build_attributes'] = true;
-		$this->functions['query_build_ordering'] = true;
-		$this->functions['query_build_row_conditions_walker'] = true;
-		$this->functions['query_build_search_conditions'] = true;
-		$this->functions['query_build_set_attributes'] = true;
-		$this->functions['query_build_values'] = true;
-		$this->functions['query_build_values_keys'] = true;
-		$this->functions['query_exec'] = true;
+		$this->functions['queryBuild'] = true;
+		$this->functions['queryBuildAttributes'] = true;
+		$this->functions['queryBuildOrdering'] = true;
+		$this->functions['queryBuildRowConditionsWalker'] = true;
+		$this->functions['queryBuildSearchConditions'] = true;
+		$this->functions['queryBuildSetAttributes'] = true;
+		$this->functions['queryBuildValues'] = true;
+		$this->functions['queryBuildValuesKeys'] = true;
+		$this->functions['queryExec'] = true;
 		$this->functions['optimize'] = true;
 		$this->functions['secure'] = true;
-		$this->functions['transaction_begin'] = true;
-		$this->functions['transaction_commit'] = true;
-		$this->functions['transaction_rollback'] = true;
+		$this->functions['transactionBegin'] = true;
+		$this->functions['transactionCommit'] = true;
+		$this->functions['transactionRollback'] = true;
 
 /* -------------------------------------------------------------------------
 Set up some variables
@@ -149,11 +149,13 @@ Set up some variables
 
 		$this->query_cache = "";
 		$this->resource = NULL;
+		$this->transactions = 0;
 
 /* -------------------------------------------------------------------------
 Set up PDO constants
 ------------------------------------------------------------------------- */
 
+/*#ifndef(PHP5n):
 		if (defined ("PDO_ATTR_PERSISTENT"))
 		{
 $this->pdo = array (
@@ -167,106 +169,81 @@ $this->pdo = array (
 		}
 		else
 		{
+:#\n*/
 $this->pdo = array (
-"errormode" => PDO::ATTR_ERRMODE,
-"errormode_silent" => PDO::ERRMODE_SILENT,
-"fetch_assoc" => PDO::FETCH_NAMED,
-"fetch_numbered" => PDO::FETCH_NUM,
-"persistent" => PDO::ATTR_PERSISTENT,
-"timeout" => PDO::ATTR_TIMEOUT
+"errormode" => /*#ifdef(PHP5n) */\PDO/* #*//*#ifndef(PHP5n):PDO:#*/::ATTR_ERRMODE,
+"errormode_silent" => /*#ifdef(PHP5n) */\PDO/* #*//*#ifndef(PHP5n):PDO:#*/::ERRMODE_SILENT,
+"fetch_assoc" => /*#ifdef(PHP5n) */\PDO/* #*//*#ifndef(PHP5n):PDO:#*/::FETCH_NAMED,
+"fetch_numbered" => /*#ifdef(PHP5n) */\PDO/* #*//*#ifndef(PHP5n):PDO:#*/::FETCH_NUM,
+"persistent" => /*#ifdef(PHP5n) */\PDO/* #*//*#ifndef(PHP5n):PDO:#*/::ATTR_PERSISTENT,
+"timeout" => /*#ifdef(PHP5n) */\PDO/* #*//*#ifndef(PHP5n):PDO:#*/::ATTR_TIMEOUT
 );
+/*#ifndef(PHP5n):
 		}
+:#\n*/
 	}
-	//f// direct_dbraw_pdo_sqlite->__destruct ()
 /**
-	* Destructor (PHP5) __destruct (direct_dbraw_pdo_sqlite)
+	* Destructor (PHP5) __destruct (directPdoSqlite)
 	*
 	* @since v0.1.00
 */
 	public function __destruct () { $this->disconnect (); }
 
-	//f// direct_dbraw_pdo_sqlite->connect ()
 /**
 	* Opens the connection to a database server and selects a database.
 	*
-	* @uses   direct_dbraw_pdo_sqlite::secure()
-	* @uses   direct_debug()
-	* @uses   USE_debug_reporting
 	* @return boolean True on success
 	* @since  v0.1.00
 */
 	public function connect ()
 	{
 		global $direct_settings;
-		if (USE_debug_reporting) { direct_debug (3,"sWG/#echo(__FILEPATH__)# -db_class->connect ()- (#echo(__LINE__)#)"); }
+		if (USE_debug_reporting) { direct_debug (3,"sWG/#echo(__FILEPATH__)# -db->connect ()- (#echo(__LINE__)#)"); }
 
 		$f_return = false;
 
 		if (is_object (($this->resource))) { $f_return = true; }
-		elseif ((class_exists ("PDO"))&&(strlen ($direct_settings['db_dsa'])))
+		elseif (strlen ($direct_settings['db_dsa']))
 		{
 			$f_error = "An unknown error occured";
 
 			try
 			{
-				if ($direct_settings['db_peristent']) { $this->resource = new PDO ($direct_settings['db_dsa'],"","",(array ($this->pdo['persistent'] => true,$this->pdo['errormode'] => $this->pdo['errormode_silent'],$this->pdo['timeout'] => $direct_settings['timeout_core']))); }
-				else { $this->resource = new PDO ($direct_settings['db_dsa'],"","",(array ($this->pdo['persistent'] => false,$this->pdo['errormode'] => $this->pdo['errormode_silent'],$this->pdo['timeout'] => $direct_settings['timeout_core']))); }
+				if ($direct_settings['db_peristent']) { $this->resource = new /*#ifdef(PHP5n) */\PDO/* #*//*#ifndef(PHP5n):PDO:#*/ ($direct_settings['db_dsa'],"","",(array ($this->pdo['persistent'] => true,$this->pdo['errormode'] => $this->pdo['errormode_silent'],$this->pdo['timeout'] => $direct_settings['timeout_core']))); }
+				else { $this->resource = new /*#ifdef(PHP5n) */\PDO/* #*//*#ifndef(PHP5n):PDO:#*/ ($direct_settings['db_dsa'],"","",(array ($this->pdo['persistent'] => false,$this->pdo['errormode'] => $this->pdo['errormode_silent'],$this->pdo['timeout'] => $direct_settings['timeout_core']))); }
 			}
-			catch (Exception $f_handled_exception) { $f_error = $f_handled_exception->getMessage (); }
+			catch (/*#ifdef(PHP5n) */\Exception/* #*//*#ifndef(PHP5n):Exception:#*/$f_handled_exception) { $f_error = $f_handled_exception->getMessage (); }
 
 			if (is_object ($this->resource)) { $f_return = true; }
-			else { trigger_error ("sWG/#echo(__FILEPATH__)# -db_class->connect ()- (#echo(__LINE__)#) reporting: ".$f_error,E_USER_ERROR); }
+			else { trigger_error ("sWG/#echo(__FILEPATH__)# -db->connect ()- (#echo(__LINE__)#) reporting: ".$f_error,E_USER_ERROR); }
 		}
 
-		return /*#ifdef(DEBUG):direct_debug (7,"sWG/#echo(__FILEPATH__)# -db_class->connect ()- (#echo(__LINE__)#)",:#*/$f_return/*#ifdef(DEBUG):,true):#*/;
+		return /*#ifdef(DEBUG):direct_debug (7,"sWG/#echo(__FILEPATH__)# -db->connect ()- (#echo(__LINE__)#)",:#*/$f_return/*#ifdef(DEBUG):,true):#*/;
 	}
 
-	//f// direct_dbraw_pdo_sqlite->disconnect ()
 /**
 	* Closes an active database connection to the server.
 	*
-	* @uses   direct_debug()
-	* @uses   USE_debug_reporting
 	* @return boolean True on success
 	* @since  v0.1.00
 */
 	public function disconnect ()
 	{
-		global $direct_settings;
-		if (USE_debug_reporting) { direct_debug (3,"sWG/#echo(__FILEPATH__)# -db_class->disconnect ()- (#echo(__LINE__)#)"); }
-
-		$f_return = false;
-
-		if (is_object ($this->resource))
-		{
-			if (!$direct_settings['db_peristent']) { $this->resource = NULL; }
-			$f_return = true;
-		}
-
-		return /*#ifdef(DEBUG):direct_debug (7,"sWG/#echo(__FILEPATH__)# -db_class->disconnect ()- (#echo(__LINE__)#)",:#*/$f_return/*#ifdef(DEBUG):,true):#*/;
+		if (USE_debug_reporting) { direct_debug (3,"sWG/#echo(__FILEPATH__)# -db->disconnect ()- (#echo(__LINE__)#)"); }
+		return /*#ifdef(DEBUG):direct_debug (7,"sWG/#echo(__FILEPATH__)# -db->disconnect ()- (#echo(__LINE__)#)",:#*/is_object ($this->resource)/*#ifdef(DEBUG):,true):#*/;
 	}
 
-	//f// direct_dbraw_pdo_sqlite->query_build ($f_data)
 /**
 	* Builds a valid SQL query for SQLite and executes it.
 	*
 	* @param  array $f_data Array containing query specific information.
-	* @uses   direct_dbraw_pdo_sqlite::query_build_attributes()
-	* @uses   direct_dbraw_pdo_sqlite::query_build_row_conditions_walker()
-	* @uses   direct_dbraw_pdo_sqlite::query_build_search_conditions()
-	* @uses   direct_dbraw_pdo_sqlite::query_build_set_attributes()
-	* @uses   direct_dbraw_pdo_sqlite::query_build_ordering()
-	* @uses   direct_dbraw_pdo_sqlite::query_build_values()
-	* @uses   direct_dbraw_pdo_sqlite::query_exec()
-	* @uses   direct_debug()
-	* @uses   USE_debug_reporting
 	* @return mixed Result returned by the server in the specified format
 	* @since  v0.1.00
 */
-	public function query_build ($f_data)
+	public function queryBuild ($f_data)
 	{
-		global $direct_classes;
-		if (USE_debug_reporting) { direct_debug (5,"sWG/#echo(__FILEPATH__)# -db_class->query_build (+f_data)- (#echo(__LINE__)#)"); }
+		global $direct_globals;
+		if (USE_debug_reporting) { direct_debug (5,"sWG/#echo(__FILEPATH__)# -db->queryBuild (+f_data)- (#echo(__LINE__)#)"); }
 
 		$f_return = false;
 
@@ -322,7 +299,7 @@ $this->pdo = array (
 
 			if ($f_continue_check)
 			{
-				if (($f_data['type'] == "select")&&(!empty ($f_data['attributes']))) { $this->query_cache .= ($this->query_build_attributes ($f_data['attributes']))." FROM "; }
+				if (($f_data['type'] == "select")&&(!empty ($f_data['attributes']))) { $this->query_cache .= ($this->queryBuildAttributes ($f_data['attributes']))." FROM "; }
 				$this->query_cache .= $f_data['table'];
 
 				if (($f_data['type'] == "select")&&(!empty ($f_data['joins'])))
@@ -360,16 +337,16 @@ $this->pdo = array (
 
 						if (!empty ($f_join_array['requirements']))
 						{
-							$f_xml_node_array = $direct_classes['xml_bridge']->xml2array ($f_join_array['requirements'],true,false);
-							if (isset ($f_xml_node_array['sqlconditions'])) { $this->query_cache .= $this->query_build_row_conditions_walker ($f_xml_node_array['sqlconditions']); }
+							$f_xml_node_array = $direct_globals['xml_bridge']->xml2array ($f_join_array['requirements'],true,false);
+							if (isset ($f_xml_node_array['sqlconditions'])) { $this->query_cache .= $this->queryBuildRowConditionsWalker ($f_xml_node_array['sqlconditions']); }
 						}
 					}
 				}
 
 				if ((($f_data['type'] == "insert")||($f_data['type'] == "replace")||($f_data['type'] == "update"))&&($f_data['set_attributes']))
 				{
-					$f_xml_node_array = $direct_classes['xml_bridge']->xml2array ($f_data['set_attributes'],true,false);
-					if (isset ($f_xml_node_array['sqlvalues'])) { $this->query_cache .= (($f_data['type'] == "update") ? " SET ".($this->query_build_set_attributes ($f_xml_node_array['sqlvalues'])) : " ".($this->query_build_values_keys ($f_xml_node_array['sqlvalues']))); }
+					$f_xml_node_array = $direct_globals['xml_bridge']->xml2array ($f_data['set_attributes'],true,false);
+					if (isset ($f_xml_node_array['sqlvalues'])) { $this->query_cache .= (($f_data['type'] == "update") ? " SET ".($this->queryBuildSetAttributes ($f_xml_node_array['sqlvalues'])) : " ".($this->queryBuildValuesKeys ($f_xml_node_array['sqlvalues']))); }
 				}
 
 				if (($f_data['type'] == "delete")||($f_data['type'] == "select")||($f_data['type'] == "update"))
@@ -378,12 +355,12 @@ $this->pdo = array (
 
 					if ($f_data['row_conditions'])
 					{
-						$f_xml_node_array = $direct_classes['xml_bridge']->xml2array ($f_data['row_conditions'],true,false);
+						$f_xml_node_array = $direct_globals['xml_bridge']->xml2array ($f_data['row_conditions'],true,false);
 
 						if (isset ($f_xml_node_array['sqlconditions']))
 						{
 							$f_where_defined = true;
-							$this->query_cache .= " WHERE ".($this->query_build_row_conditions_walker ($f_xml_node_array['sqlconditions']));
+							$this->query_cache .= " WHERE ".($this->queryBuildRowConditionsWalker ($f_xml_node_array['sqlconditions']));
 						}
 					}
 
@@ -391,8 +368,8 @@ $this->pdo = array (
 					{
 						if ($f_data['search_conditions'])
 						{
-							$f_xml_node_array = $direct_classes['xml_bridge']->xml2array ($f_data['search_conditions'],true,false);
-							if (isset ($f_xml_node_array['sqlconditions'])) { $this->query_cache .= ($f_where_defined ? " AND (".($this->query_build_search_conditions ($f_xml_node_array['sqlconditions'])).")" : " WHERE ".($this->query_build_search_conditions ($f_xml_node_array['sqlconditions']))); }
+							$f_xml_node_array = $direct_globals['xml_bridge']->xml2array ($f_data['search_conditions'],true,false);
+							if (isset ($f_xml_node_array['sqlconditions'])) { $this->query_cache .= ($f_where_defined ? " AND (".($this->queryBuildSearchConditions ($f_xml_node_array['sqlconditions'])).")" : " WHERE ".($this->queryBuildSearchConditions ($f_xml_node_array['sqlconditions']))); }
 						}
 
 						if (!empty ($f_data['grouping'])) { $this->query_cache .= " GROUP BY ".(implode (",",$f_data['grouping'])); }
@@ -401,32 +378,29 @@ $this->pdo = array (
 
 				if (($f_data['type'] == "select")&&($f_data['ordering']))
 				{
-					$f_xml_node_array = $direct_classes['xml_bridge']->xml2array ($f_data['ordering'],true,false);
-					if (isset ($f_xml_node_array['sqlordering'])) { $this->query_cache .= " ORDER BY ".($this->query_build_ordering ($f_xml_node_array['sqlordering'])); }
+					$f_xml_node_array = $direct_globals['xml_bridge']->xml2array ($f_data['ordering'],true,false);
+					if (isset ($f_xml_node_array['sqlordering'])) { $this->query_cache .= " ORDER BY ".($this->queryBuildOrdering ($f_xml_node_array['sqlordering'])); }
 				}
 
 				if (($f_data['type'] == "insert")||($f_data['type'] == "replace"))
 				{
-					if ($f_data['values_keys'])
+					if ((is_array ($f_data['values_keys']))&&($f_data['values_keys']))
 					{
-						if (is_array ($f_data['values_keys']))
+						$f_values_keys = "";
+
+						foreach ($f_data['values_keys'] as $f_values_key)
 						{
-							$f_values_keys = "";
-
-							foreach ($f_data['values_keys'] as $f_values_key)
-							{
-								if ($f_values_keys) { $f_values_keys .= ","; }
-								$f_values_keys .= preg_replace ("#^(.*?)\.(\w+)$#","\\2",$f_values_key);
-							}
-
-							$this->query_cache .= " ($f_values_keys)";
+							if ($f_values_keys) { $f_values_keys .= ","; }
+							$f_values_keys .= preg_replace ("#^(.*?)\.(\w+)$#","\\2",$f_values_key);
 						}
+
+						$this->query_cache .= " ($f_values_keys)";
 					}
 
 					if ($f_data['values'])
 					{
-						$f_xml_node_array = $direct_classes['xml_bridge']->xml2array ($f_data['values'],true,false);
-						if (isset ($f_xml_node_array['sqlvalues'])) { $this->query_cache .= " VALUES ".($this->query_build_values ($f_xml_node_array['sqlvalues'])); }
+						$f_xml_node_array = $direct_globals['xml_bridge']->xml2array ($f_data['values'],true,false);
+						if (isset ($f_xml_node_array['sqlvalues'])) { $this->query_cache .= " VALUES ".($this->queryBuildValues ($f_xml_node_array['sqlvalues'])); }
 					}
 				}
 
@@ -436,28 +410,25 @@ $this->pdo = array (
 					if ($f_data['offset']) { $this->query_cache .= " OFFSET ".$f_data['offset']; }
 				}
 
-				$f_return = (($f_data['answer'] == "sql") ? $this->query_cache : $this->query_exec ($f_data['answer'],$this->query_cache));
+				$f_return = (($f_data['answer'] == "sql") ? $this->query_cache : $this->queryExec ($f_data['answer'],$this->query_cache));
 			}
-			else { trigger_error ("sWG/#echo(__FILEPATH__)# -db_class->query_build ()- (#echo(__LINE__)#) reporting: Required definition elements are missing",E_USER_WARNING); }
+			else { trigger_error ("sWG/#echo(__FILEPATH__)# -db->queryBuild ()- (#echo(__LINE__)#) reporting: Required definition elements are missing",E_USER_WARNING); }
 		}
-		else { trigger_error ("sWG/#echo(__FILEPATH__)# -db_class->query_build ()- (#echo(__LINE__)#) reporting: Database resource invalid",E_USER_WARNING); }
+		else { trigger_error ("sWG/#echo(__FILEPATH__)# -db->queryBuild ()- (#echo(__LINE__)#) reporting: Database resource invalid",E_USER_WARNING); }
 
-		return /*#ifdef(DEBUG):direct_debug (7,"sWG/#echo(__FILEPATH__)# -db_class->query_build ()- (#echo(__LINE__)#)",:#*/$f_return/*#ifdef(DEBUG):,true):#*/;
+		return /*#ifdef(DEBUG):direct_debug (7,"sWG/#echo(__FILEPATH__)# -db->queryBuild ()- (#echo(__LINE__)#)",:#*/$f_return/*#ifdef(DEBUG):,true):#*/;
 	}
 
-	//f// direct_dbraw_pdo_sqlite->query_build_attributes ($f_attributes_array)
 /**
 	* Builds the SQL attributes list of a query.
 	*
 	* @param  array $f_attributes_array Array of attributes
-	* @uses   direct_debug()
-	* @uses   USE_debug_reporting
 	* @return string Attributes list with translated function names
 	* @since  v0.1.00
 */
-	protected function query_build_attributes ($f_attributes_array)
+	protected function queryBuildAttributes ($f_attributes_array)
 	{
-		if (USE_debug_reporting) { direct_debug (5,"sWG/#echo(__FILEPATH__)# -db_class->query_build_attributes (+f_attributes_array)- (#echo(__LINE__)#)"); }
+		if (USE_debug_reporting) { direct_debug (5,"sWG/#echo(__FILEPATH__)# -db->queryBuildAttributes (+f_attributes_array)- (#echo(__LINE__)#)"); }
 		$f_return = "";
 
 		if ((is_array ($f_attributes_array))&&(!empty ($f_attributes_array)))
@@ -487,22 +458,19 @@ $this->pdo = array (
 			}
 		}
 
-		return /*#ifdef(DEBUG):direct_debug (7,"sWG/#echo(__FILEPATH__)# -db_class->query_build_attributes ()- (#echo(__LINE__)#)",:#*/$f_return/*#ifdef(DEBUG):,true):#*/;
+		return /*#ifdef(DEBUG):direct_debug (7,"sWG/#echo(__FILEPATH__)# -db->queryBuildAttributes ()- (#echo(__LINE__)#)",:#*/$f_return/*#ifdef(DEBUG):,true):#*/;
 	}
 
-	//f// direct_dbraw_pdo_sqlite->query_build_ordering ($f_ordering_list)
 /**
 	* Builds the SQL ORDER BY part of a query.
 	*
 	* @param  array $f_ordering_list ORDER BY list given as a XML array tree
-	* @uses   direct_debug()
-	* @uses   USE_debug_reporting
 	* @return string Valid SQL ORDER BY definition
 	* @since  v0.1.00
 */
-	protected function query_build_ordering ($f_ordering_list)
+	protected function queryBuildOrdering ($f_ordering_list)
 	{
-		if (USE_debug_reporting) { direct_debug (5,"sWG/#echo(__FILEPATH__)# -db_class->query_build_ordering (+f_ordering_list)- (#echo(__LINE__)#)"); }
+		if (USE_debug_reporting) { direct_debug (5,"sWG/#echo(__FILEPATH__)# -db->queryBuildOrdering (+f_ordering_list)- (#echo(__LINE__)#)"); }
 		$f_return = "";
 
 		if (is_array ($f_ordering_list))
@@ -516,23 +484,19 @@ $this->pdo = array (
 			}
 		}
 
-		return /*#ifdef(DEBUG):direct_debug (7,"sWG/#echo(__FILEPATH__)# -db_class->query_build_ordering ()- (#echo(__LINE__)#)",:#*/$f_return/*#ifdef(DEBUG):,true):#*/;
+		return /*#ifdef(DEBUG):direct_debug (7,"sWG/#echo(__FILEPATH__)# -db->queryBuildOrdering ()- (#echo(__LINE__)#)",:#*/$f_return/*#ifdef(DEBUG):,true):#*/;
 	}
 
-	//f// direct_dbraw_pdo_sqlite->query_build_row_conditions_walker ($f_requirements_array)
 /**
 	* Creates a WHERE string including sublevel conditions.
 	*
 	* @param  array $f_requirements_array WHERE definitions given as a XML array tree
-	* @uses   direct_dbraw_pdo_sqlite::query_build_row_conditions_walker()
-	* @uses   direct_debug()
-	* @uses   USE_debug_reporting
 	* @return string Valid SQL WHERE definition
 	* @since  v0.1.00
 */
-	protected function query_build_row_conditions_walker ($f_requirements_array)
+	protected function queryBuildRowConditionsWalker ($f_requirements_array)
 	{
-		if (USE_debug_reporting) { direct_debug (5,"sWG/#echo(__FILEPATH__)# -db_class->query_build_row_conditions_walker (+f_requirements_array)- (#echo(__LINE__)#)"); }
+		if (USE_debug_reporting) { direct_debug (5,"sWG/#echo(__FILEPATH__)# -db->queryBuildRowConditionsWalker (+f_requirements_array)- (#echo(__LINE__)#)"); }
 		$f_return = "";
 
 		if (is_array ($f_requirements_array))
@@ -546,7 +510,7 @@ $this->pdo = array (
 					if (isset ($f_requirement_array['xml.item']))
 					{
 						if ($f_return) { $f_return .= (((isset ($f_requirement_array['xml.item']['attributes']['condition']))&&($f_requirement_array['xml.item']['attributes']['condition'] == "or")) ? " OR " : " AND "); }
-						$f_return .= ((count ($f_requirement_array) > 2) ? "(".($this->query_build_row_conditions_walker ($f_requirement_array)).")" : $this->query_build_row_conditions_walker ($f_requirement_array));
+						$f_return .= ((count ($f_requirement_array) > 2) ? "(".($this->queryBuildRowConditionsWalker ($f_requirement_array)).")" : $this->queryBuildRowConditionsWalker ($f_requirement_array));
 					}
 					elseif ($f_requirement_array['value'] != "*")
 					{
@@ -572,35 +536,30 @@ $this->pdo = array (
 							$f_return .= " {$f_requirement_array['attributes']['operator']} ";
 							$f_return .= ((($f_requirement_array['attributes']['type'] == "string")&&($f_requirement_array['value'][0] != "'")) ? "'{$f_requirement_array['value']}'" : $f_requirement_array['value']);
 						}
-						else { $f_return .= " {$f_requirement_array['attributes']['operator']} NULL"; }
+						else { $f_return .= (($f_requirement_array['attributes']['type'] == "string") ? " {$f_requirement_array['attributes']['operator']} ''" : " {$f_requirement_array['attributes']['operator']} NULL"); }
 					}
 				}
 			}
 		}
 
-		return /*#ifdef(DEBUG):direct_debug (7,"sWG/#echo(__FILEPATH__)# -db_class->query_build_row_conditions_walker ()- (#echo(__LINE__)#)",:#*/$f_return/*#ifdef(DEBUG):,true):#*/;
+		return /*#ifdef(DEBUG):direct_debug (7,"sWG/#echo(__FILEPATH__)# -db->queryBuildRowConditionsWalker ()- (#echo(__LINE__)#)",:#*/$f_return/*#ifdef(DEBUG):,true):#*/;
 	}
 
-	//f// direct_dbraw_pdo_sqlite->query_build_search_conditions ($f_conditions_array)
 /**
 	* Creates search requests
 	*
 	* @param  array $f_conditions_array WHERE definitions given as a XML array tree
-	* @uses   direct_dbraw_pdo_sqlite::secure()
-	* @uses   direct_debug()
-	* @uses   USE_debug_reporting
 	* @return string Valid SQL WHERE definition
 	* @since  v0.1.00
 */
-	protected function query_build_search_conditions ($f_conditions_array)
+	protected function queryBuildSearchConditions ($f_conditions_array)
 	{
-		if (USE_debug_reporting) { direct_debug (5,"sWG/#echo(__FILEPATH__)# -db_class->query_build_search_conditions (+f_conditions_array)- (#echo(__LINE__)#)"); }
+		if (USE_debug_reporting) { direct_debug (5,"sWG/#echo(__FILEPATH__)# -db->queryBuildSearchConditions (+f_conditions_array)- (#echo(__LINE__)#)"); }
 		$f_return = "";
 
 		if (is_array ($f_conditions_array))
 		{
 			$f_attributes_array = array ();
-			$f_search_advanced = false;
 			$f_search_term = "";
 
 			if (isset ($f_conditions_array['xml.item'])) { unset ($f_conditions_array['xml.item']); }
@@ -648,12 +607,8 @@ Result is: [0] => %Test% [1] => %Test1 Test2 Test3% [2] => %Test4%
            [3] => %Test5% [4] => %Test6 Test7%
 ------------------------------------------------------------------------- */
 
-				$f_search_term = preg_replace ("#^\*#m","%",$f_search_term);
-				$f_search_term = preg_replace ("#(\w)\*#","\\1%",$f_search_term);
-				$f_search_term = str_replace (" OR "," ",$f_search_term);
-				$f_search_term = str_replace (" NOT "," ",$f_search_term);
-				$f_search_term = str_replace ("HIGH ","",$f_search_term);
-				$f_search_term = str_replace ("LOW ","",$f_search_term);
+				$f_search_term = preg_replace (array ("#^\*#m","#(\w)\*#"),(array ("%","\\1%")),$f_search_term);
+				$f_search_term = str_replace (array (" OR "," NOT ","HIGH ","LOW "),(array (" "," ","","")),$f_search_term);
 
 				$f_words = explode (" ",$f_search_term);
 				$f_and_check = false;
@@ -719,22 +674,19 @@ Don't forget to check the buffer $f_word_buffer
 			}
 		}
 
-		return /*#ifdef(DEBUG):direct_debug (7,"sWG/#echo(__FILEPATH__)# -db_class->query_build_search_conditions ()- (#echo(__LINE__)#)",:#*/$f_return/*#ifdef(DEBUG):,true):#*/;
+		return /*#ifdef(DEBUG):direct_debug (7,"sWG/#echo(__FILEPATH__)# -db->queryBuildSearchConditions ()- (#echo(__LINE__)#)",:#*/$f_return/*#ifdef(DEBUG):,true):#*/;
 	}
 
-	//f// direct_dbraw_pdo_sqlite->query_build_set_attributes ($f_attributes_array)
 /**
 	* Builds the SQL attributes and values list for UPDATE.
 	*
 	* @param  array $f_attributes_array Attributes given as a XML array tree
-	* @uses   direct_debug()
-	* @uses   USE_debug_reporting
 	* @return string Attributes list with translated function names
 	* @since  v0.1.00
 */
-	protected function query_build_set_attributes ($f_attributes_array)
+	protected function queryBuildSetAttributes ($f_attributes_array)
 	{
-		if (USE_debug_reporting) { direct_debug (5,"sWG/#echo(__FILEPATH__)# -db_class->query_build_set_attributes (+f_attributes_array)- (#echo(__LINE__)#)"); }
+		if (USE_debug_reporting) { direct_debug (5,"sWG/#echo(__FILEPATH__)# -db->queryBuildSetAttributes (+f_attributes_array)- (#echo(__LINE__)#)"); }
 		$f_return = "";
 
 		if (is_array ($f_attributes_array))
@@ -748,27 +700,23 @@ Don't forget to check the buffer $f_word_buffer
 
 				if (isset ($f_attribute_array['attributes']['null'])) { $f_return .= "NULL"; }
 				elseif (strlen ($f_attribute_array['value'])) { $f_return .= ((($f_attribute_array['attributes']['type'] == "string")&&($f_attribute_array['value'][0] != "'")) ? "'{$f_attribute_array['value']}'" : $f_attribute_array['value']); }
-				else { $f_return .= "NULL"; }
+				else { $f_return .= (($f_attribute_array['attributes']['type'] == "string") ? "''" : "NULL"); }
 			}
 		}
 
-		return /*#ifdef(DEBUG):direct_debug (7,"sWG/#echo(__FILEPATH__)# -db_class->query_build_set_attributes ()- (#echo(__LINE__)#)",:#*/$f_return/*#ifdef(DEBUG):,true):#*/;
+		return /*#ifdef(DEBUG):direct_debug (7,"sWG/#echo(__FILEPATH__)# -db->queryBuildSetAttributes ()- (#echo(__LINE__)#)",:#*/$f_return/*#ifdef(DEBUG):,true):#*/;
 	}
 
-	//f// direct_dbraw_pdo_sqlite->query_build_values ($f_values_array)
 /**
 	* Builds the SQL VALUES part of a query.
 	*
 	* @param  array $f_values_array WHERE definitions given as a XML array tree
-	* @uses   direct_dbraw_pdo_sqlite::query_build_values()
-	* @uses   direct_debug()
-	* @uses   USE_debug_reporting
 	* @return string Valid SQL VALUES definition
 	* @since  v0.1.00
 */
-	protected function query_build_values ($f_values_array)
+	protected function queryBuildValues ($f_values_array)
 	{
-		if (USE_debug_reporting) { direct_debug (5,"sWG/#echo(__FILEPATH__)# -db_class->query_build_value (+f_values_array)- (#echo(__LINE__)#)"); }
+		if (USE_debug_reporting) { direct_debug (5,"sWG/#echo(__FILEPATH__)# -db->queryBuildValues (+f_values_array)- (#echo(__LINE__)#)"); }
 		$f_return = "";
 
 		if (is_array ($f_values_array))
@@ -781,7 +729,7 @@ Don't forget to check the buffer $f_word_buffer
 				if (isset ($f_value_array['xml.item']))
 				{
 					if ($f_return) { $f_return .= ","; }
-					$f_return .= $this->query_build_values ($f_value_array);
+					$f_return .= $this->queryBuildValues ($f_value_array);
 				}
 				else
 				{
@@ -790,29 +738,26 @@ Don't forget to check the buffer $f_word_buffer
 
 					if (isset ($f_value_array['attributes']['null'])) { $f_return .= "NULL"; }
 					elseif (strlen ($f_value_array['value'])) { $f_return .= ((($f_value_array['attributes']['type'] == "string")&&($f_value_array['value'][0] != "'")) ? "'{$f_value_array['value']}'" : $f_value_array['value']); }
-					else { $f_return .= "NULL"; }
+					else { $f_return .= (($f_value_array['attributes']['type'] == "string") ? "''" : "NULL"); }
 				}
 			}
 
 			if ($f_bracket_check) { $f_return .= ")"; }
 		}
 
-		return /*#ifdef(DEBUG):direct_debug (7,"sWG/#echo(__FILEPATH__)# -db_class->query_build_value ()- (#echo(__LINE__)#)",:#*/$f_return/*#ifdef(DEBUG):,true):#*/;
+		return /*#ifdef(DEBUG):direct_debug (7,"sWG/#echo(__FILEPATH__)# -db->queryBuildValues ()- (#echo(__LINE__)#)",:#*/$f_return/*#ifdef(DEBUG):,true):#*/;
 	}
 
-	//f// direct_dbraw_pdo_sqlite->query_build_values_keys ($f_attributes_array)
 /**
 	* Builds the SQL attributes and values list for INSERT.
 	*
 	* @param  array $f_attributes_array Attributes given as a XML array tree
-	* @uses   direct_debug()
-	* @uses   USE_debug_reporting
 	* @return string Attributes list with translated function names
 	* @since  v0.1.00
 */
-	protected function query_build_values_keys ($f_attributes_array)
+	protected function queryBuildValuesKeys ($f_attributes_array)
 	{
-		if (USE_debug_reporting) { direct_debug (5,"sWG/#echo(__FILEPATH__)# -db_class->query_build_values_keys (+f_attributes_array)- (#echo(__LINE__)#)"); }
+		if (USE_debug_reporting) { direct_debug (5,"sWG/#echo(__FILEPATH__)# -db->queryBuildValuesKeys (+f_attributes_array)- (#echo(__LINE__)#)"); }
 		$f_return = "";
 
 		if (is_array ($f_attributes_array))
@@ -827,32 +772,29 @@ Don't forget to check the buffer $f_word_buffer
 
 				if (isset ($f_attribute_array['attributes']['null'])) { $f_values[] = "NULL"; }
 				elseif (strlen ($f_attribute_array['value'])) { $f_values[] = ((($f_attribute_array['attributes']['type'] == "string")&&($f_attribute_array['value'][0] != "'")) ? "'{$f_attribute_array['value']}'" : $f_attribute_array['value']); }
-				else { $f_values[] = "NULL"; }
+				else { $f_values[] = (($f_attribute_array['attributes']['type'] == "string") ? "''" : "NULL"); }
 			}
 
 			$f_return = "(".(implode (",",$f_keys)).") VALUES (".(implode (",",$f_values)).")";
 		}
 
-		return /*#ifdef(DEBUG):direct_debug (7,"sWG/#echo(__FILEPATH__)# -db_class->query_build_values_keys ()- (#echo(__LINE__)#)",:#*/$f_return/*#ifdef(DEBUG):,true):#*/;
+		return /*#ifdef(DEBUG):direct_debug (7,"sWG/#echo(__FILEPATH__)# -db->queryBuildValuesKeys ()- (#echo(__LINE__)#)",:#*/$f_return/*#ifdef(DEBUG):,true):#*/;
 	}
 
-	//f// direct_dbraw_pdo_sqlite->query_exec ($f_answer,$f_query)
 /**
 	* Transmits an SQL query and returns the result in a developer specified
 	* format via $f_answer.
 	*
 	* @param  string $f_answer Defines the requested type that should be returned
-    *         The following types are supported: "ar", "co", "ma", "ms", "nr",
-    *         "sa" or "ss".
+	*         The following types are supported: "ar", "co", "ma", "ms", "nr",
+	*         "sa" or "ss".
 	* @param  string $f_query Valid SQL query
-	* @uses   direct_debug()
-	* @uses   USE_debug_reporting
 	* @return mixed Result returned by the server in the specified format
 	* @since  v0.1.00
 */
-	public function query_exec ($f_answer,$f_query)
+	public function queryExec ($f_answer,$f_query)
 	{
-		if (USE_debug_reporting) { direct_debug (3,"sWG/#echo(__FILEPATH__)# -db_class->query_exec ($f_answer,$f_query)- (#echo(__LINE__)#)"); }
+		if (USE_debug_reporting) { direct_debug (3,"sWG/#echo(__FILEPATH__)# -db->queryExec ($f_answer,$f_query)- (#echo(__LINE__)#)"); }
 		$f_return = false;
 
 		if (is_object ($this->resource))
@@ -865,7 +807,7 @@ Don't forget to check the buffer $f_word_buffer
 				if (($f_answer == "co")||(!$f_result_object)||(!is_object ($f_result_object)))
 				{
 					if ($this->resource->errorCode () == "00000") { $f_return = true; }
-					else { trigger_error ("sWG/#echo(__FILEPATH__)# -db_class->query_exec ()- (#echo(__LINE__)#) reporting: ANSI ".($this->resource->errorCode ())." - ".serialize ($this->resource->errorInfo ()),E_USER_ERROR); }
+					else { trigger_error ("sWG/#echo(__FILEPATH__)# -db->queryExec ()- (#echo(__LINE__)#) reporting: ANSI ".($this->resource->errorCode ())." - ".serialize ($this->resource->errorInfo ()),E_USER_ERROR); }
 				}
 				elseif ($f_answer == "ma")
 				{
@@ -908,46 +850,39 @@ Don't forget to check the buffer $f_word_buffer
 				if (is_object ($f_result_object)) { $f_result_object->closeCursor (); }
 			}
 		}
-		else { trigger_error ("sWG/#echo(__FILEPATH__)# -db_class->query_exec ()- (#echo(__LINE__)#) reporting: Database resource invalid",E_USER_WARNING); }
+		else { trigger_error ("sWG/#echo(__FILEPATH__)# -db->queryExec ()- (#echo(__LINE__)#) reporting: Database resource invalid",E_USER_WARNING); }
 
-		return /*#ifdef(DEBUG):direct_debug (7,"sWG/#echo(__FILEPATH__)# -db_class->query_exec ()- (#echo(__LINE__)#)",:#*/$f_return/*#ifdef(DEBUG):,true):#*/;
+		return /*#ifdef(DEBUG):direct_debug (7,"sWG/#echo(__FILEPATH__)# -db->queryExec ()- (#echo(__LINE__)#)",:#*/$f_return/*#ifdef(DEBUG):,true):#*/;
 	}
 
-	//f// direct_dbraw_pdo_sqlite->optimize ($f_table)
 /**
 	* Optimizes a given table.
 	*
 	* @param  string $f_table Name of the table
-	* @uses   direct_dbraw_pdo_sqlite::query_exec()
-	* @uses   direct_debug()
-	* @uses   USE_debug_reporting
 	* @return boolean True on success
 	* @since  v0.1.00
 */
 	public function optimize ($f_table)
 	{
-		if (USE_debug_reporting) { direct_debug (5,"sWG/#echo(__FILEPATH__)# -db_class->optimize ($f_table)- (#echo(__LINE__)#)"); }
+		if (USE_debug_reporting) { direct_debug (5,"sWG/#echo(__FILEPATH__)# -db->optimize ($f_table)- (#echo(__LINE__)#)"); }
 		$f_return = false;
 
 		if (is_object ($this->resource)) { $f_return = true; }
-		else { trigger_error ("sWG/#echo(__FILEPATH__)# -db_class->optimize ()- (#echo(__LINE__)#) reporting: Database resource invalid",E_USER_WARNING); }
+		else { trigger_error ("sWG/#echo(__FILEPATH__)# -db->optimize ()- (#echo(__LINE__)#) reporting: Database resource invalid",E_USER_WARNING); }
 
-		return /*#ifdef(DEBUG):direct_debug (7,"sWG/#echo(__FILEPATH__)# -db_class->optimize ()- (#echo(__LINE__)#)",:#*/$f_return/*#ifdef(DEBUG):,true):#*/;
+		return /*#ifdef(DEBUG):direct_debug (7,"sWG/#echo(__FILEPATH__)# -db->optimize ()- (#echo(__LINE__)#)",:#*/$f_return/*#ifdef(DEBUG):,true):#*/;
 	}
 
-	//f// direct_dbraw_pdo_sqlite->secure (&$f_data)
 /**
 	* Secures a given string to protect against SQL injections.
 	*
-	* @param  mixed &$f_data Input array or string; $f_data is NULL if there is no
+	* @param  mixed $f_data Input array or string; $f_data is NULL if there is no
 	*         valid SQL resource. 
-	* @uses   direct_debug()
-	* @uses   USE_debug_reporting
 	* @since  v0.1.00
 */
 	public function secure (&$f_data)
 	{
-		if (USE_debug_reporting) { direct_debug (5,"sWG/#echo(__FILEPATH__)# -db_class->secure (+f_data)- (#echo(__LINE__)#)"); }
+		if (USE_debug_reporting) { direct_debug (5,"sWG/#echo(__FILEPATH__)# -db->secure (+f_data)- (#echo(__LINE__)#)"); }
 
 		if (is_object ($this->resource))
 		{
@@ -960,19 +895,16 @@ Don't forget to check the buffer $f_word_buffer
 		else { $f_data = NULL; }
 	}
 
-	//f// direct_dbraw_pdo_sqlite->transaction_begin ()
 /**
 	* Starts a transaction.
 	*
-	* @uses   direct_debug()
-	* @uses   USE_debug_reporting
 	* @return boolean True on success
 	* @since  v0.1.00
 */
-	public function transaction_begin ()
+	public function transactionBegin ()
 	{
 		global $direct_settings;
-		if (USE_debug_reporting) { direct_debug (5,"sWG/#echo(__FILEPATH__)# -db_class->transaction_begin ()- (#echo(__LINE__)#)"); }
+		if (USE_debug_reporting) { direct_debug (5,"sWG/#echo(__FILEPATH__)# -db->transactionBegin ()- (#echo(__LINE__)#)"); }
 
 		if ($direct_settings['db_transaction_supported'])
 		{
@@ -980,29 +912,26 @@ Don't forget to check the buffer $f_word_buffer
 
 			if (is_object ($this->resource))
 			{
-				$f_return = (($this->transactions > 0) ? true : $this->query_exec ("co","BEGIN"));
+				$f_return = (($this->transactions > 0) ? true : $this->queryExec ("co","BEGIN"));
 				if ($f_return) { $this->transactions++; }
 			}
-			else { trigger_error ("sWG/#echo(__FILEPATH__)# -db_class->transaction_begin ()- (#echo(__LINE__)#) reporting: Database resource invalid",E_USER_WARNING); }
+			else { trigger_error ("sWG/#echo(__FILEPATH__)# -db->transactionBegin ()- (#echo(__LINE__)#) reporting: Database resource invalid",E_USER_WARNING); }
 		}
 		else { $f_return = true; }
 
-		return /*#ifdef(DEBUG):direct_debug (7,"sWG/#echo(__FILEPATH__)# -db_class->transaction_begin ()- (#echo(__LINE__)#)",:#*/$f_return/*#ifdef(DEBUG):,true):#*/;
+		return /*#ifdef(DEBUG):direct_debug (7,"sWG/#echo(__FILEPATH__)# -db->transactionBegin ()- (#echo(__LINE__)#)",:#*/$f_return/*#ifdef(DEBUG):,true):#*/;
 	}
 
-	//f// direct_dbraw_pdo_sqlite->transaction_commit ()
 /**
 	* Commits all transaction statements.
 	*
-	* @uses   direct_debug()
-	* @uses   USE_debug_reporting
 	* @return boolean True on success
 	* @since  v0.1.00
 */
-	public function transaction_commit ()
+	public function transactionCommit ()
 	{
 		global $direct_settings;
-		if (USE_debug_reporting) { direct_debug (5,"sWG/#echo(__FILEPATH__)# -db_class->transaction_commit ()- (#echo(__LINE__)#)"); }
+		if (USE_debug_reporting) { direct_debug (5,"sWG/#echo(__FILEPATH__)# -db->transactionCommit ()- (#echo(__LINE__)#)"); }
 
 		if ($direct_settings['db_transaction_supported'])
 		{
@@ -1010,29 +939,26 @@ Don't forget to check the buffer $f_word_buffer
 
 			if (($this->transactions > 0)&&(is_object ($this->resource)))
 			{
-				$f_return = (($this->transactions > 1) ? true : $this->query_exec ("co","COMMIT"));
+				$f_return = (($this->transactions > 1) ? true : $this->queryExec ("co","COMMIT"));
 				if ($f_return) { $this->transactions--; }
 			}
-			else { trigger_error ("sWG/#echo(__FILEPATH__)# -db_class->transaction_commit ()- (#echo(__LINE__)#) reporting: Database resource invalid",E_USER_WARNING); }
+			else { trigger_error ("sWG/#echo(__FILEPATH__)# -db->transactionCommit ()- (#echo(__LINE__)#) reporting: Database resource invalid",E_USER_WARNING); }
 		}
 		else { $f_return = true; }
 
-		return /*#ifdef(DEBUG):direct_debug (7,"sWG/#echo(__FILEPATH__)# -db_class->transaction_commit ()- (#echo(__LINE__)#)",:#*/$f_return/*#ifdef(DEBUG):,true):#*/;
+		return /*#ifdef(DEBUG):direct_debug (7,"sWG/#echo(__FILEPATH__)# -db->transactionCommit ()- (#echo(__LINE__)#)",:#*/$f_return/*#ifdef(DEBUG):,true):#*/;
 	}
 
-	//f// direct_dbraw_pdo_sqlite->transaction_rollback ()
 /**
 	* Calls the ROLLBACK statement.
 	*
-	* @uses   direct_debug()
-	* @uses   USE_debug_reporting
 	* @return boolean True on success
 	* @since  v0.1.00
 */
-	public function transaction_rollback ()
+	public function transactionRollback ()
 	{
 		global $direct_settings;
-		if (USE_debug_reporting) { direct_debug (5,"sWG/#echo(__FILEPATH__)# -db_class->transaction_rollback ()- (#echo(__LINE__)#)"); }
+		if (USE_debug_reporting) { direct_debug (5,"sWG/#echo(__FILEPATH__)# -db->transactionRollback ()- (#echo(__LINE__)#)"); }
 
 		if ($direct_settings['db_transaction_supported'])
 		{
@@ -1040,14 +966,14 @@ Don't forget to check the buffer $f_word_buffer
 
 			if (($this->transactions > 0)&&(is_object ($this->resource)))
 			{
-				$f_return = (($this->transactions > 1) ? true : $this->query_exec ("co","ROLLBACK"));
+				$f_return = (($this->transactions > 1) ? true : $this->queryExec ("co","ROLLBACK"));
 				if ($f_return) { $this->transactions--; }
 			}
-			else { trigger_error ("sWG/#echo(__FILEPATH__)# -db_class->transaction_rollback ()- (#echo(__LINE__)#) reporting: Database resource invalid",E_USER_WARNING); }
+			else { trigger_error ("sWG/#echo(__FILEPATH__)# -db->transactionRollback ()- (#echo(__LINE__)#) reporting: Database resource invalid",E_USER_WARNING); }
 		}
 		else { $f_return = true; }
 
-		return /*#ifdef(DEBUG):direct_debug (7,"sWG/#echo(__FILEPATH__)# -db_class->transaction_rollback ()- (#echo(__LINE__)#)",:#*/$f_return/*#ifdef(DEBUG):,true):#*/;
+		return /*#ifdef(DEBUG):direct_debug (7,"sWG/#echo(__FILEPATH__)# -db->transactionRollback ()- (#echo(__LINE__)#)",:#*/$f_return/*#ifdef(DEBUG):,true):#*/;
 	}
 }
 
@@ -1055,10 +981,11 @@ Don't forget to check the buffer $f_word_buffer
 Mark this class as the most up-to-date one
 ------------------------------------------------------------------------- */
 
-define ("CLASS_direct_dbraw_pdo_sqlite",true);
+define ("CLASS_directPdoSqlite",true);
 
 //j// Script specific commands
 
+global $direct_settings;
 if (!isset ($direct_settings['db_advanced_search_supported'])) { $direct_settings['db_advanced_search_supported'] = false; }
 if (!isset ($direct_settings['db_transaction_supported'])) { $direct_settings['db_transaction_supported'] = true; }
 if (!isset ($direct_settings['db_nested_transactions_supported'])) { $direct_settings['db_nested_transactions_supported'] = false; }

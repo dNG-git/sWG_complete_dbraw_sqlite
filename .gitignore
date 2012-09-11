@@ -1,0 +1,6 @@
+_extras
+.*
+*.mo
+dbraw_sqlite.*
+make*.py*
+nbproject

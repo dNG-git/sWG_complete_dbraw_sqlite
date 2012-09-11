@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+secured WebGine
+net-based application engine
+
+(C) direct Netware Group - All rights reserved
+http://www.direct-netware.de/redirect.php?swg
+
+This Source Code Form is subject to the terms of the Mozilla Public License,
+v. 2.0. If a copy of the MPL was not distributed with this file, You can
+obtain one at http://mozilla.org/MPL/2.0/.
+
+http://www.direct-netware.de/redirect.php?licenses;mpl2
+// -->
+<project name="sWG_complete: dbraw_sqlite" default="compile.phpBuilder">
+	<dirname property="swgModule.basedir" file="${ant.file}" />
+	<basename property="swgModule.name" file="${swgModule.basedir}" />
+
+	<property file="${swgModule.basedir}/_extras/build.properties" />
+
+	<pathconvert property="swgCore.basedir">
+		<path path="${ant.file}" />
+		<mapper type="regexp" from="^(.*)/sWG_complete/${swgModule.name}" to="\1/sWG_core" />
+	</pathconvert>
+
+	<target name="compile.phpBuilder" description="Compile module ${swgModule.name}">
+		<exec executable="python">
+			<arg file="${phpBuilder.filePathName}" />
+			<arg value="--filetype=${phpBuilder.fileTypes}" />
+			<arg value="--include=${swgModule.basedir}/data,${swgModule.basedir}/lang,${swgModule.basedir}/system" />
+			<arg value="--strip_prefix=${swgModule.basedir}/" />
+		</exec>
+	</target>
+
+	<target name="convert.xmlToPo" description="Convert translations from XML to POTs for ${swgModule.name}">
+		<delete includeEmptyDirs="true"><fileset dir="${swgModule.basedir}/po" includes="**/*.pot" /></delete>
+
+		<exec executable="python">
+			<arg file="${poConverter.filePathName}" />
+			<arg value="--define=version=${swgModule.version}" />
+			<arg value="--input_xml=${swgModule.basedir}/lang" />
+			<arg value="--output=${swgModule.basedir}/po" />
+		</exec>
+	</target>
+</project>
